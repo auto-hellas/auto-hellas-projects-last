@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   Search,
@@ -20,11 +20,6 @@ import {
   Database,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const stats = [
   { label: 'Επιλεγμένα αυτοκίνητα', value: '100%' },
@@ -68,7 +63,119 @@ const fallbackInventory = [
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
+const cn = (...classes) => classes.filter(Boolean).join(' ');
 
+function Card({ className = '', ...props }) {
+  return <div className={className} {...props} />;
+}
+
+function CardContent({ className = '', ...props }) {
+  return <div className={className} {...props} />;
+}
+
+function Badge({ className = '', children, ...props }) {
+  return (
+    <span className={className} {...props}>
+      {children}
+    </span>
+  );
+}
+
+function Input({ className = '', ...props }) {
+  return <input className={className} {...props} />;
+}
+
+function Button({
+  className = '',
+  children,
+  asChild = false,
+  type = 'button',
+  ...props
+}) {
+  const baseClass = cn(
+    'inline-flex items-center justify-center gap-2 whitespace-nowrap transition',
+    className
+  );
+
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children, {
+      className: cn(baseClass, children.props.className || ''),
+    });
+  }
+
+  return (
+    <button type={type} className={baseClass} {...props}>
+      {children}
+    </button>
+  );
+}
+
+const SelectContext = createContext(null);
+
+function Select({ value, onValueChange, children }) {
+  const childArray = React.Children.toArray(children);
+
+  const triggerChild = childArray.find(
+    (child) => React.isValidElement(child) && child.type === SelectTrigger
+  );
+
+  const contentChild = childArray.find(
+    (child) => React.isValidElement(child) && child.type === SelectContent
+  );
+
+  const items = contentChild
+    ? React.Children.toArray(contentChild.props.children)
+        .filter((child) => React.isValidElement(child) && child.type === SelectItem)
+        .map((child) => ({
+          value: child.props.value,
+          label: child.props.children,
+        }))
+    : [];
+
+  return (
+    <SelectContext.Provider value={{ value, onValueChange, items }}>
+      {triggerChild}
+    </SelectContext.Provider>
+  );
+}
+
+function SelectTrigger({ className = '', children }) {
+  const context = useContext(SelectContext);
+
+  let placeholder = 'Επιλογή';
+  React.Children.forEach(children, (child) => {
+    if (React.isValidElement(child) && child.type === SelectValue) {
+      placeholder = child.props.placeholder || placeholder;
+    }
+  });
+
+  return (
+    <select
+      value={context?.value ?? ''}
+      onChange={(e) => context?.onValueChange?.(e.target.value)}
+      className={className}
+    >
+      {context?.items?.length ? null : <option value="">{placeholder}</option>}
+      {context?.items?.map((item) => (
+        <option key={item.value} value={item.value}>
+          {item.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function SelectValue() {
+  return null;
+}
+
+function SelectContent() {
+  return null;
+}
+
+function SelectItem() {
+  return null;
+}
 function VehicleCard({ car }) {
   return (
     <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.2 }}>

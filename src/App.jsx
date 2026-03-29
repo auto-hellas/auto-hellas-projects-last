@@ -218,6 +218,7 @@ const [form, setForm] = useState({
 };
 
  const handleAddCar = async () => {
+ const handleAddCar = async () => {
   if (!form.title || !form.price || !form.year) return;
 
   if (!supabase) {
@@ -267,7 +268,11 @@ const [form, setForm] = useState({
     featured: form.featured,
   };
 
-  const { data, error } = await supabase.from('cars').insert(payload).select().single();
+  const { data, error } = await supabase
+    .from('cars')
+    .insert(payload)
+    .select()
+    .single();
 
   if (error) {
     console.error('Supabase insert failed', error);
@@ -278,33 +283,6 @@ const [form, setForm] = useState({
   setCars((prev) => [data, ...prev]);
   resetForm();
 };
-
-    setCarsError('');
-
-    const payload = {
-      title: form.title,
-      price: form.price,
-      year: Number(form.year),
-      km: form.km || '—',
-      fuel: form.fuel,
-      transmission: form.transmission,
-      image:
-        form.image ||
-        'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80',
-      featured: form.featured,
-    };
-
-    const { data, error } = await supabase.from('cars').insert(payload).select().single();
-
-    if (error) {
-      console.error('Supabase insert failed', error);
-      setCarsError('Η αγγελία δεν αποθηκεύτηκε. Έλεγξε table / permissions / keys.');
-      return;
-    }
-
-    setCars((prev) => [data, ...prev]);
-    resetForm();
-  };
 
   const handleDeleteCar = async (id) => {
     if (!supabase) {

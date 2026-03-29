@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   Search,
@@ -10,16 +10,13 @@ import {
   Fuel,
   SlidersHorizontal,
   Star,
-  ChevronRight,
   CarFront,
-  Camera,
   ShieldCheck,
   MessageCircle,
   Plus,
   Trash2,
   Database,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 const stats = [
   { label: 'Επιλεγμένα αυτοκίνητα', value: '100%' },
@@ -32,17 +29,17 @@ const benefits = [
   {
     icon: ShieldCheck,
     title: 'Ελεγμένα οχήματα',
-    text: 'Καθαρή, premium παρουσίαση με έμφαση στην αξιοπιστία και στη σωστή πληροφόρηση.',
+    text: 'Καθαρή premium παρουσίαση με έμφαση στην αξιοπιστία και στη σωστή πληροφόρηση.',
   },
   {
-    icon: Camera,
+    icon: CarFront,
     title: 'Πολλές φωτογραφίες',
-    text: 'Κάθε αγγελία μπορεί να έχει gallery, βασικά χαρακτηριστικά και ξεκάθαρη φόρμα ενδιαφέροντος.',
+    text: 'Κάθε αγγελία έχει εικόνα, βασικά χαρακτηριστικά και γρήγορη φόρμα ενδιαφέροντος.',
   },
   {
     icon: MessageCircle,
     title: 'Άμεσο lead',
-    text: 'Κουμπί για τηλέφωνο, Viber/WhatsApp, φόρμα επικοινωνίας και αίτημα για ανταλλαγή.',
+    text: 'Τηλέφωνο, email και καθαρή προβολή στοιχείων επικοινωνίας.',
   },
 ];
 
@@ -63,177 +60,48 @@ const fallbackInventory = [
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
-const cn = (...classes) => classes.filter(Boolean).join(' ');
 
-function Card({ className = '', ...props }) {
-  return <div className={className} {...props} />;
-}
+const defaultImage =
+  'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80';
 
-function CardContent({ className = '', ...props }) {
-  return <div className={className} {...props} />;
-}
-
-function Badge({ className = '', children, ...props }) {
+function StatCard({ value, label }) {
   return (
-    <span className={className} {...props}>
-      {children}
-    </span>
+    <div className="ah-card ah-stat-card">
+      <div className="ah-stat-line" />
+      <div className="ah-stat-value">{value}</div>
+      <div className="ah-stat-label">{label}</div>
+    </div>
   );
 }
 
-function Input({ className = '', ...props }) {
-  return <input className={className} {...props} />;
-}
-
-function Button({
-  className = '',
-  children,
-  asChild = false,
-  type = 'button',
-  ...props
-}) {
-  const baseClass = cn(
-    'inline-flex items-center justify-center gap-2 whitespace-nowrap transition',
-    className
-  );
-
-  if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, {
-      className: cn(baseClass, children.props.className || ''),
-    });
-  }
-
-  return (
-    <button type={type} className={baseClass} {...props}>
-      {children}
-    </button>
-  );
-}
-
-const SelectContext = createContext(null);
-
-function Select({ value, onValueChange, children }) {
-  const childArray = React.Children.toArray(children);
-
-  const triggerChild = childArray.find(
-    (child) => React.isValidElement(child) && child.type === SelectTrigger
-  );
-
-  const contentChild = childArray.find(
-    (child) => React.isValidElement(child) && child.type === SelectContent
-  );
-
-  const items = contentChild
-    ? React.Children.toArray(contentChild.props.children)
-        .filter((child) => React.isValidElement(child) && child.type === SelectItem)
-        .map((child) => ({
-          value: child.props.value,
-          label: child.props.children,
-        }))
-    : [];
-
-  return (
-    <SelectContext.Provider value={{ value, onValueChange, items }}>
-      {triggerChild}
-    </SelectContext.Provider>
-  );
-}
-
-function SelectTrigger({ className = '', children }) {
-  const context = useContext(SelectContext);
-
-  let placeholder = 'Επιλογή';
-  React.Children.forEach(children, (child) => {
-    if (React.isValidElement(child) && child.type === SelectValue) {
-      placeholder = child.props.placeholder || placeholder;
-    }
-  });
-
-  return (
-    <select
-      value={context?.value ?? ''}
-      onChange={(e) => context?.onValueChange?.(e.target.value)}
-      className={className}
-    >
-      {context?.items?.length ? null : <option value="">{placeholder}</option>}
-      {context?.items?.map((item) => (
-        <option key={item.value} value={item.value}>
-          {item.label}
-        </option>
-      ))}
-    </select>
-  );
-}
-
-function SelectValue() {
-  return null;
-}
-
-function SelectContent() {
-  return null;
-}
-
-function SelectItem() {
-  return null;
-}
 function VehicleCard({ car }) {
   return (
-    <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.2 }}>
-      <Card className="overflow-hidden rounded-3xl border border-zinc-800/80 bg-gradient-to-b from-zinc-950 to-black shadow-2xl">
-        <div className="relative h-56 overflow-hidden">
-          <img src={car.image} alt={car.title} className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-          <div className="absolute left-4 top-4 flex gap-2">
-            {car.featured && (
-              <Badge className="rounded-full border border-zinc-700 bg-zinc-100 text-black">
-                Προτεινόμενο
-              </Badge>
-            )}
-            <Badge
-              variant="secondary"
-              className="rounded-full border border-zinc-700 bg-black/70 text-zinc-100"
-            >
-              {car.year}
-            </Badge>
-          </div>
-          <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
-            <h3 className="max-w-[70%] text-lg font-semibold leading-tight text-white">
-              {car.title}
-            </h3>
-            <div className="rounded-2xl border border-zinc-700 bg-zinc-100 px-3 py-2 text-sm font-bold text-black shadow-lg">
-              {car.price}
-            </div>
-          </div>
+    <div className="ah-card ah-vehicle-card">
+      <div className="ah-vehicle-image-wrap">
+        <img src={car.image || defaultImage} alt={car.title} className="ah-vehicle-image" />
+        <div className="ah-vehicle-overlay" />
+        <div className="ah-vehicle-badges">
+          {car.featured ? <span className="ah-badge ah-badge-light">Προτεινόμενο</span> : null}
+          <span className="ah-badge">{car.year}</span>
         </div>
-        <CardContent className="p-5">
-          <div className="grid grid-cols-2 gap-3 text-sm text-zinc-300">
-            <div className="flex items-center gap-2">
-              <Gauge className="h-4 w-4" /> {car.km}
-            </div>
-            <div className="flex items-center gap-2">
-              <Fuel className="h-4 w-4" /> {car.fuel}
-            </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" /> {car.year}
-            </div>
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal className="h-4 w-4" /> {car.transmission}
-            </div>
-          </div>
-          <div className="mt-5 flex gap-3">
-            <Button className="flex-1 rounded-2xl bg-zinc-100 text-black hover:bg-zinc-200">
-              Προβολή αγγελίας
-            </Button>
-            <Button
-              variant="outline"
-              className="flex-1 rounded-2xl border-zinc-700 bg-transparent text-zinc-100 hover:bg-zinc-900"
-            >
-              Επικοινωνία
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+        <div className="ah-vehicle-bottom">
+          <h3 className="ah-vehicle-title">{car.title}</h3>
+          <div className="ah-price">{car.price}</div>
+        </div>
+      </div>
+      <div className="ah-vehicle-body">
+        <div className="ah-spec-grid">
+          <div className="ah-spec"><Gauge size={16} /> {car.km}</div>
+          <div className="ah-spec"><Fuel size={16} /> {car.fuel}</div>
+          <div className="ah-spec"><Calendar size={16} /> {car.year}</div>
+          <div className="ah-spec"><SlidersHorizontal size={16} /> {car.transmission}</div>
+        </div>
+        <div className="ah-row ah-gap-sm ah-mt-md">
+          <button className="ah-btn ah-btn-primary ah-btn-block">Προβολή αγγελίας</button>
+          <button className="ah-btn ah-btn-secondary ah-btn-block">Επικοινωνία</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -252,33 +120,34 @@ export default function AutoHellasPremiumDemo() {
     km: '',
     fuel: 'Βενζίνη',
     transmission: 'Αυτόματο',
-    image: '',
     imageFile: null,
     featured: true,
   });
 
   useEffect(() => {
-    let isMounted = true;
+    let active = true;
 
     const loadCars = async () => {
       if (!supabase) {
-        if (isMounted) {
-          setCars(fallbackInventory);
-          setCarsError('Λείπουν τα Supabase environment variables. Εμφανίζεται προσωρινό demo απόθεμα.');
-          setIsLoadingCars(false);
-        }
+        if (!active) return;
+        setCars(fallbackInventory);
+        setCarsError('Λείπουν τα Supabase environment variables. Εμφανίζεται προσωρινό demo απόθεμα.');
+        setIsLoadingCars(false);
         return;
       }
 
       setIsLoadingCars(true);
       setCarsError('');
 
-      const { data, error } = await supabase.from('cars').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('cars')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      if (!isMounted) return;
+      if (!active) return;
 
       if (error) {
-        console.error('Supabase load failed', error);
+        console.error(error);
         setCars(fallbackInventory);
         setCarsError('Δεν έγινε φόρτωση από τη βάση. Εμφανίζεται προσωρινό demo απόθεμα.');
       } else {
@@ -289,18 +158,19 @@ export default function AutoHellasPremiumDemo() {
     };
 
     loadCars();
-
     return () => {
-      isMounted = false;
+      active = false;
     };
   }, []);
 
-  const filtered = useMemo(() => {
+  const filteredCars = useMemo(() => {
     return cars.filter((car) => {
-      const matchQuery = car.title.toLowerCase().includes(query.toLowerCase());
-      const matchFuel = fuel === 'all' ? true : car.fuel.toLowerCase().includes(fuel.toLowerCase());
+      const matchQuery = (car.title || '').toLowerCase().includes(query.toLowerCase());
+      const matchFuel = fuel === 'all' ? true : (car.fuel || '').toLowerCase().includes(fuel.toLowerCase());
       const matchTransmission =
-        transmission === 'all' ? true : car.transmission.toLowerCase().includes(transmission.toLowerCase());
+        transmission === 'all'
+          ? true
+          : (car.transmission || '').toLowerCase().includes(transmission.toLowerCase());
       const matchYearFrom = yearFrom === 'all' ? true : Number(car.year) >= Number(yearFrom);
       return matchQuery && matchFuel && matchTransmission && matchYearFrom;
     });
@@ -318,14 +188,16 @@ export default function AutoHellasPremiumDemo() {
       km: '',
       fuel: 'Βενζίνη',
       transmission: 'Αυτόματο',
-      image: '',
       imageFile: null,
       featured: true,
     });
   };
 
   const handleAddCar = async () => {
-    if (!form.title || !form.price || !form.year) return;
+    if (!form.title || !form.price || !form.year) {
+      setCarsError('Συμπλήρωσε τίτλο, τιμή και έτος.');
+      return;
+    }
 
     if (!supabase) {
       setCarsError('Δεν υπάρχει σύνδεση με Supabase ακόμη.');
@@ -333,12 +205,10 @@ export default function AutoHellasPremiumDemo() {
     }
 
     setCarsError('');
-
-    let imageUrl =
-      'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80';
+    let imageUrl = defaultImage;
 
     if (form.imageFile) {
-      const fileExt = form.imageFile.name.split('.').pop();
+      const fileExt = form.imageFile.name.split('.').pop() || 'jpg';
       const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
       const filePath = `cars/${fileName}`;
 
@@ -351,15 +221,12 @@ export default function AutoHellasPremiumDemo() {
         });
 
       if (uploadError) {
-        console.error('Supabase upload failed', uploadError);
+        console.error(uploadError);
         setCarsError('Η φωτογραφία δεν ανέβηκε.');
         return;
       }
 
-      const { data: publicUrlData } = supabase.storage
-        .from('car-images')
-        .getPublicUrl(filePath);
-
+      const { data: publicUrlData } = supabase.storage.from('car-images').getPublicUrl(filePath);
       imageUrl = publicUrlData.publicUrl;
     }
 
@@ -374,14 +241,10 @@ export default function AutoHellasPremiumDemo() {
       featured: form.featured,
     };
 
-    const { data, error } = await supabase
-      .from('cars')
-      .insert(payload)
-      .select()
-      .single();
+    const { data, error } = await supabase.from('cars').insert(payload).select().single();
 
     if (error) {
-      console.error('Supabase insert failed', error);
+      console.error(error);
       setCarsError('Η αγγελία δεν αποθηκεύτηκε. Έλεγξε table / permissions / keys.');
       return;
     }
@@ -402,389 +265,410 @@ export default function AutoHellasPremiumDemo() {
     const { error } = await supabase.from('cars').delete().eq('id', id);
 
     if (error) {
-      console.error('Supabase delete failed', error);
+      console.error(error);
       setCars(previousCars);
       setCarsError('Η διαγραφή απέτυχε. Η αγγελία επανήλθε.');
     }
   };
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#050505_0%,#090909_45%,#030303_100%)] text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(180,180,180,0.12),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(120,120,120,0.08),transparent_22%)]" />
+    <>
+      <style>{`
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Inter, Arial, sans-serif; background: #050505; color: #f4f4f5; }
+        a { color: inherit; text-decoration: none; }
+        .ah-page { min-height: 100vh; background: linear-gradient(180deg, #050505 0%, #090909 45%, #030303 100%); }
+        .ah-shell { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+        .ah-header { position: sticky; top: 0; z-index: 30; border-bottom: 1px solid #27272a; background: rgba(0,0,0,.9); backdrop-filter: blur(12px); }
+        .ah-header-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; }
+        .ah-brand-top { font-size: 12px; text-transform: uppercase; letter-spacing: .35em; color: #71717a; }
+        .ah-brand-main { font-size: 28px; font-weight: 800; letter-spacing: .06em; }
+        .ah-brand-main span { color: #a1a1aa; }
+        .ah-nav { display: flex; gap: 24px; color: #d4d4d8; }
+        .ah-btn { border: 0; border-radius: 16px; padding: 12px 18px; font-weight: 700; cursor: pointer; }
+        .ah-btn-primary { background: #f4f4f5; color: #111827; }
+        .ah-btn-secondary { background: transparent; color: #f4f4f5; border: 1px solid #3f3f46; }
+        .ah-btn-block { width: 100%; }
+        .ah-hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; padding: 56px 0; }
+        .ah-pill { display: inline-block; margin-bottom: 18px; padding: 8px 14px; border: 1px solid #27272a; border-radius: 999px; background: #09090b; color: #d4d4d8; font-size: 14px; }
+        .ah-title { font-size: clamp(38px, 6vw, 62px); line-height: 1.02; font-weight: 900; margin: 0; }
+        .ah-title span { color: #e4e4e7; }
+        .ah-subtitle { margin-top: 18px; max-width: 760px; color: #d4d4d8; font-size: 18px; line-height: 1.75; }
+        .ah-search-panel, .ah-card { border: 1px solid #27272a; background: linear-gradient(180deg, #111111, #050505); border-radius: 28px; }
+        .ah-search-panel { padding: 18px; margin-top: 24px; }
+        .ah-search-grid { display: grid; grid-template-columns: 1.3fr .9fr .9fr .9fr auto; gap: 12px; }
+        .ah-input, .ah-select { width: 100%; background: #09090b; border: 1px solid #27272a; color: #f4f4f5; border-radius: 16px; padding: 14px 16px; font-size: 15px; }
+        .ah-input-wrap { position: relative; }
+        .ah-input-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #71717a; }
+        .ah-input-wrap .ah-input { padding-left: 42px; }
+        .ah-action-row { display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+        .ah-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 26px; }
+        .ah-stat-card { min-height: 148px; padding: 22px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .ah-stat-line { width: 64px; height: 1px; background: linear-gradient(90deg, transparent, #d4d4d8, transparent); margin-bottom: 12px; }
+        .ah-stat-value { font-size: 28px; font-weight: 800; line-height: 1.1; }
+        .ah-stat-label { margin-top: 10px; font-size: 14px; color: #e4e4e7; }
+        .ah-showcase { position: relative; min-height: 460px; overflow: hidden; }
+        .ah-showcase img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        .ah-showcase-overlay { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(0,0,0,.82), rgba(0,0,0,.35), transparent); }
+        .ah-showcase-content { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 28px; }
+        .ah-badge { display: inline-flex; align-items: center; border: 1px solid #3f3f46; background: rgba(0,0,0,.55); color: #f4f4f5; border-radius: 999px; padding: 6px 12px; font-size: 12px; }
+        .ah-badge-light { background: #f4f4f5; color: #111827; }
+        .ah-section { padding: 26px 0 52px; }
+        .ah-section-title { font-size: 36px; margin: 10px 0 8px; }
+        .ah-section-kicker { font-size: 13px; letter-spacing: .24em; text-transform: uppercase; color: #71717a; }
+        .ah-section-text { color: #a1a1aa; line-height: 1.7; }
+        .ah-toolbar { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 22px; }
+        .ah-toolbar-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; width: min(860px, 100%); }
+        .ah-alert { margin-bottom: 20px; border-radius: 24px; padding: 16px 18px; }
+        .ah-alert-warning { border: 1px solid rgba(217,119,6,.35); background: rgba(120,53,15,.25); color: #fde68a; }
+        .ah-alert-muted { border: 1px solid #3f3f46; background: rgba(9,9,11,.85); color: #d4d4d8; }
+        .ah-inventory-grid, .ah-benefit-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 22px; }
+        .ah-vehicle-card { overflow: hidden; }
+        .ah-vehicle-image-wrap { position: relative; height: 240px; }
+        .ah-vehicle-image { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .ah-vehicle-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, transparent, rgba(0,0,0,.8)); }
+        .ah-vehicle-badges { position: absolute; top: 16px; left: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .ah-vehicle-bottom { position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; justify-content: space-between; align-items: end; gap: 12px; }
+        .ah-vehicle-title { margin: 0; max-width: 70%; font-size: 20px; line-height: 1.15; }
+        .ah-price { background: #f4f4f5; color: #111827; border-radius: 16px; padding: 10px 12px; font-weight: 800; }
+        .ah-vehicle-body { padding: 18px; }
+        .ah-spec-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; color: #d4d4d8; }
+        .ah-spec { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .ah-row { display: flex; }
+        .ah-gap-sm { gap: 12px; }
+        .ah-mt-md { margin-top: 18px; }
+        .ah-benefit-card { padding: 24px; }
+        .ah-benefit-icon { width: 52px; height: 52px; display: inline-flex; align-items: center; justify-content: center; border-radius: 18px; background: #09090b; border: 1px solid #27272a; margin-bottom: 16px; }
+        .ah-split-card { display: grid; grid-template-columns: .9fr 1.1fr; gap: 26px; padding: 28px; }
+        .ah-list { display: grid; gap: 12px; color: #d4d4d8; }
+        .ah-admin-list { margin-top: 24px; padding: 18px; border: 1px solid #27272a; border-radius: 24px; background: rgba(0,0,0,.35); }
+        .ah-admin-item { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 16px; border: 1px solid #27272a; border-radius: 18px; background: #09090b; }
+        .ah-form-card { padding: 24px; }
+        .ah-form-grid { display: grid; gap: 12px; }
+        .ah-form-two { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+        .ah-file-wrap { border: 1px solid #27272a; background: #09090b; border-radius: 16px; padding: 12px; }
+        .ah-file-wrap label { display: block; margin-bottom: 8px; color: #a1a1aa; font-size: 14px; }
+        .ah-checkbox { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border: 1px solid #27272a; border-radius: 16px; background: rgba(9,9,11,.85); }
+        .ah-location-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: 26px; padding: 24px; }
+        .ah-contact-box { border: 1px solid #27272a; border-radius: 18px; background: rgba(9,9,11,.9); padding: 16px; }
+        .ah-contact-kicker { margin-bottom: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .22em; color: #71717a; }
+        .ah-map-panel { min-height: 360px; border: 1px solid #27272a; border-radius: 24px; background: linear-gradient(135deg, #0a0a0a 0%, #111111 50%, #0a0a0a 100%); display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+        .ah-footer { border-top: 1px solid #27272a; background: rgba(0,0,0,.8); }
+        .ah-footer-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 26px; padding: 34px 0; }
+        .ah-stack { display: grid; gap: 12px; }
+        .ah-inline { display: flex; align-items: center; gap: 10px; }
+        .ah-muted { color: #a1a1aa; }
+        @media (max-width: 1024px) {
+          .ah-hero, .ah-split-card, .ah-location-grid, .ah-footer-grid { grid-template-columns: 1fr; }
+          .ah-stat-grid, .ah-inventory-grid, .ah-benefit-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+          .ah-search-grid, .ah-toolbar-grid { grid-template-columns: 1fr 1fr; }
+          .ah-nav { display: none; }
+        }
+        @media (max-width: 720px) {
+          .ah-shell { padding: 0 16px; }
+          .ah-stat-grid, .ah-inventory-grid, .ah-benefit-grid, .ah-search-grid, .ah-toolbar-grid, .ah-form-two { grid-template-columns: 1fr; }
+          .ah-title { font-size: 36px; }
+          .ah-section-title { font-size: 30px; }
+          .ah-vehicle-bottom { flex-direction: column; align-items: start; }
+          .ah-vehicle-title { max-width: 100%; }
+          .ah-action-row, .ah-row { flex-direction: column; }
+          .ah-btn-block { width: 100%; }
+        }
+      `}</style>
 
-      <header className="sticky top-0 z-30 border-b border-zinc-800/80 bg-black/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
-          <div>
-            <div className="text-xs uppercase tracking-[0.35em] text-zinc-500">Premium Used Cars</div>
-            <div className="text-2xl font-bold tracking-[0.08em] text-zinc-100">
-              Auto-Hellas <span className="text-zinc-400">ΓΕΩΡΓΑΤΣΗΣ</span>
+      <div className="ah-page">
+        <header className="ah-header">
+          <div className="ah-shell ah-header-inner">
+            <div>
+              <div className="ah-brand-top">Premium Used Cars</div>
+              <div className="ah-brand-main">Auto-Hellas <span>ΓΕΩΡΓΑΤΣΗΣ</span></div>
             </div>
+            <nav className="ah-nav">
+              <a href="#inventory">Απόθεμα</a>
+              <a href="#why">Γιατί εμάς</a>
+              <a href="#contact">Επικοινωνία</a>
+            </nav>
+            <button className="ah-btn ah-btn-primary">Ζητήστε προσφορά</button>
           </div>
-          <nav className="hidden items-center gap-6 text-sm text-zinc-300 md:flex">
-            <a href="#inventory" className="hover:text-white">Απόθεμα</a>
-            <a href="#why" className="hover:text-white">Γιατί εμάς</a>
-            <a href="#contact" className="hover:text-white">Επικοινωνία</a>
-          </nav>
-          <Button className="rounded-2xl bg-zinc-100 text-black hover:bg-zinc-200">Ζητήστε προσφορά</Button>
-        </div>
-      </header>
+        </header>
 
-      <section className="relative overflow-hidden">
-        <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[1.1fr_0.9fr] lg:px-8 lg:py-24">
-          <div className="flex flex-col justify-center">
-            <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              <Badge className="mb-5 rounded-full border border-zinc-800 bg-zinc-950/90 px-4 py-1 text-zinc-300">
-                Black premium dealer website
-              </Badge>
-              <h1 className="max-w-4xl text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
-                Το δικό σου site για <span className="text-zinc-200">μεταχειρισμένα αυτοκίνητα</span>, χωρίς να
-                εξαρτάσαι μόνο από πλατφόρμες τρίτων.
+        <main className="ah-shell">
+          <section className="ah-hero">
+            <div>
+              <div className="ah-pill">Black premium dealer website</div>
+              <h1 className="ah-title">
+                Το δικό σου site για <span>μεταχειρισμένα αυτοκίνητα</span>, χωρίς να εξαρτάσαι μόνο από πλατφόρμες τρίτων.
               </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-zinc-300">
-                Premium εμφάνιση, αναζήτηση οχημάτων, σελίδα για κάθε αγγελία, γρήγορη επικοινωνία και δομή ώστε να
-                ανεβάζεις εσύ φωτογραφίες, χαρακτηριστικά και τιμές.
+              <p className="ah-subtitle">
+                Premium εμφάνιση, αναζήτηση οχημάτων, σελίδα για κάθε αγγελία, γρήγορη επικοινωνία και δομή ώστε να ανεβάζεις εσύ φωτογραφίες, χαρακτηριστικά και τιμές.
               </p>
-            </motion.div>
 
-            <div className="mt-8 rounded-[2rem] border border-zinc-800/80 bg-black/70 p-4 shadow-2xl backdrop-blur-xl sm:p-5">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_auto]">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                  <Input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Μάρκα ή μοντέλο"
-                    className="h-12 rounded-2xl border-zinc-800 bg-zinc-950/90 pl-10 text-white placeholder:text-zinc-500"
-                  />
+              <div className="ah-search-panel">
+                <div className="ah-search-grid">
+                  <div className="ah-input-wrap">
+                    <Search size={16} />
+                    <input className="ah-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Μάρκα ή μοντέλο" />
+                  </div>
+                  <select className="ah-select" value={fuel} onChange={(e) => setFuel(e.target.value)}>
+                    <option value="all">Όλα τα καύσιμα</option>
+                    <option value="βενζίνη">Βενζίνη</option>
+                    <option value="diesel">Diesel</option>
+                    <option value="hybrid">Hybrid</option>
+                    <option value="plug-in">Plug-in Hybrid</option>
+                  </select>
+                  <select className="ah-select" value={transmission} onChange={(e) => setTransmission(e.target.value)}>
+                    <option value="all">Όλα τα κιβώτια</option>
+                    <option value="αυτόματο">Αυτόματο</option>
+                    <option value="χειροκίνητο">Χειροκίνητο</option>
+                  </select>
+                  <select className="ah-select" value={yearFrom} onChange={(e) => setYearFrom(e.target.value)}>
+                    <option value="all">Από οποιοδήποτε έτος</option>
+                    <option value="2024">Από 2024</option>
+                    <option value="2023">Από 2023</option>
+                    <option value="2022">Από 2022</option>
+                    <option value="2021">Από 2021</option>
+                    <option value="2020">Από 2020</option>
+                  </select>
+                  <button className="ah-btn ah-btn-primary" onClick={() => document.getElementById('inventory')?.scrollIntoView({ behavior: 'smooth' })}>
+                    Αναζήτηση
+                  </button>
                 </div>
-                <Select value={fuel} onValueChange={setFuel}>
-                  <SelectTrigger className="h-12 rounded-2xl border-zinc-800 bg-zinc-950/90 text-white">
-                    <SelectValue placeholder="Καύσιμο" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Όλα τα καύσιμα</SelectItem>
-                    <SelectItem value="βενζίνη">Βενζίνη</SelectItem>
-                    <SelectItem value="diesel">Diesel</SelectItem>
-                    <SelectItem value="hybrid">Hybrid</SelectItem>
-                    <SelectItem value="plug-in">Plug-in Hybrid</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={transmission} onValueChange={setTransmission}>
-                  <SelectTrigger className="h-12 rounded-2xl border-zinc-800 bg-zinc-950/90 text-white">
-                    <SelectValue placeholder="Κιβώτιο" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Όλα τα κιβώτια</SelectItem>
-                    <SelectItem value="αυτόματο">Αυτόματο</SelectItem>
-                    <SelectItem value="χειροκίνητο">Χειροκίνητο</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={yearFrom} onValueChange={setYearFrom}>
-                  <SelectTrigger className="h-12 rounded-2xl border-zinc-800 bg-zinc-950/90 text-white">
-                    <SelectValue placeholder="Από έτος" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Από οποιοδήποτε έτος</SelectItem>
-                    <SelectItem value="2024">Από 2024</SelectItem>
-                    <SelectItem value="2023">Από 2023</SelectItem>
-                    <SelectItem value="2022">Από 2022</SelectItem>
-                    <SelectItem value="2021">Από 2021</SelectItem>
-                    <SelectItem value="2020">Από 2020</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  size="lg"
-                  onClick={() => document.getElementById('inventory')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="h-12 rounded-2xl bg-zinc-100 px-6 text-black hover:bg-zinc-200"
-                >
-                  Αναζήτηση
-                </Button>
+                <div className="ah-action-row">
+                  <button className="ah-btn ah-btn-primary">Δες απόθεμα</button>
+                  <button className="ah-btn ah-btn-secondary">Σχεδίαση για κινητό & desktop</button>
+                </div>
+              </div>
+
+              <div className="ah-stat-grid">
+                {stats.map((item) => (
+                  <StatCard key={item.label} value={item.value} label={item.label} />
+                ))}
               </div>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-4">
-              <Button size="lg" className="rounded-2xl bg-zinc-100 px-6 text-black hover:bg-zinc-200">
-                Δες απόθεμα <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
-              <Button size="lg" variant="outline" className="rounded-2xl border-zinc-700 bg-transparent px-6 text-zinc-100 hover:bg-zinc-900">
-                Σχεδίαση για κινητό & desktop
-              </Button>
+            <div className="ah-card ah-showcase">
+              <img src={defaultImage} alt="Premium dealership" />
+              <div className="ah-showcase-overlay" />
+              <div className="ah-showcase-content">
+                <div className="ah-inline" style={{ justifyContent: 'space-between' }}>
+                  <span className="ah-badge ah-badge-light">Demo Homepage</span>
+                  <span className="ah-badge">Black • Premium • Fast</span>
+                </div>
+                <div>
+                  <div className="ah-inline ah-muted" style={{ marginBottom: 10 }}><Star size={16} /> Προβολή με έμφαση στο αυτοκίνητο</div>
+                  <h2 style={{ fontSize: 34, lineHeight: 1.15, margin: 0 }}>Δυνατό πρώτο impression για πελάτες που ψάχνουν σοβαρό κατάστημα.</h2>
+                  <p className="ah-subtitle" style={{ fontSize: 16, maxWidth: 520 }}>
+                    Η αρχική σελίδα μπορεί να δείχνει προσφορές, νέα παραλαβή, χρηματοδότηση, trade-in και άμεση επικοινωνία.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="inventory" className="ah-section">
+            <div className="ah-toolbar">
+              <div>
+                <div className="ah-section-kicker">Inventory</div>
+                <h2 className="ah-section-title">Αγγελίες οχημάτων</h2>
+                <p className="ah-section-text">Οι αγγελίες που περνάς στο panel πιο κάτω εμφανίζονται αυτόματα εδώ.</p>
+              </div>
+              <div className="ah-toolbar-grid">
+                <div className="ah-input-wrap">
+                  <Search size={16} />
+                  <input className="ah-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Αναζήτηση π.χ. Mercedes, Peugeot..." />
+                </div>
+                <select className="ah-select" value={fuel} onChange={(e) => setFuel(e.target.value)}>
+                  <option value="all">Όλα</option>
+                  <option value="βενζίνη">Βενζίνη</option>
+                  <option value="diesel">Diesel</option>
+                  <option value="hybrid">Hybrid</option>
+                  <option value="plug-in">Plug-in Hybrid</option>
+                </select>
+                <select className="ah-select" value={transmission} onChange={(e) => setTransmission(e.target.value)}>
+                  <option value="all">Όλα τα κιβώτια</option>
+                  <option value="αυτόματο">Αυτόματο</option>
+                  <option value="χειροκίνητο">Χειροκίνητο</option>
+                </select>
+                <select className="ah-select" value={yearFrom} onChange={(e) => setYearFrom(e.target.value)}>
+                  <option value="all">Από οποιοδήποτε έτος</option>
+                  <option value="2024">Από 2024</option>
+                  <option value="2023">Από 2023</option>
+                  <option value="2022">Από 2022</option>
+                  <option value="2021">Από 2021</option>
+                  <option value="2020">Από 2020</option>
+                </select>
+              </div>
             </div>
 
-            <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4">
-              {stats.map((item) => (
-                <Card
-                  key={item.label}
-                  className="overflow-hidden rounded-3xl border border-zinc-700/80 bg-gradient-to-b from-zinc-900 via-zinc-950 to-black shadow-[0_12px_35px_rgba(0,0,0,0.35)]"
-                >
-                  <CardContent className="flex h-[148px] flex-col items-center justify-center px-4 py-5 text-center">
-                    <div className="mb-3 h-px w-16 bg-gradient-to-r from-transparent via-zinc-300 to-transparent" />
-                    <div className={`max-w-full font-extrabold leading-tight tracking-tight text-zinc-50 ${item.value.length > 14 ? 'text-base sm:text-lg lg:text-xl' : 'text-lg sm:text-xl lg:text-2xl'}`}>
-                      {item.value}
-                    </div>
-                    <div className="mt-3 max-w-full text-sm font-medium leading-snug text-zinc-200">{item.label}</div>
-                  </CardContent>
-                </Card>
+            {carsError ? <div className="ah-alert ah-alert-warning">{carsError}</div> : null}
+            {isLoadingCars ? <div className="ah-alert ah-alert-muted">Γίνεται φόρτωση αγγελιών από τη βάση δεδομένων...</div> : null}
+            {!isLoadingCars && cars.length === 0 ? (
+              <div className="ah-alert ah-alert-muted">
+                Δεν υπάρχει ακόμη ενεργό απόθεμα. Πρόσθεσε την πρώτη αγγελία από το panel διαχείρισης πιο κάτω.
+              </div>
+            ) : null}
+
+            <div className="ah-inventory-grid">
+              {filteredCars.map((car) => (
+                <VehicleCard key={car.id} car={car} />
               ))}
             </div>
-          </div>
+          </section>
 
-          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.45 }}>
-            <Card className="overflow-hidden rounded-[2rem] border border-zinc-800/80 bg-zinc-950/80 shadow-2xl backdrop-blur-xl">
-              <div className="relative h-full min-h-[420px]">
-                <img src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1400&q=80" alt="Premium dealership" className="absolute inset-0 h-full w-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/40 to-transparent" />
-                <div className="relative flex h-full flex-col justify-between p-6">
-                  <div className="flex items-start justify-between">
-                    <Badge className="rounded-full border border-zinc-700 bg-zinc-100 text-black">Demo Homepage</Badge>
-                    <div className="rounded-2xl border border-zinc-800 bg-black/60 px-4 py-2 text-sm text-zinc-300">Black • Premium • Fast</div>
-                  </div>
-                  <div>
-                    <div className="mb-2 flex items-center gap-2 text-zinc-300"><Star className="h-4 w-4" /> Προβολή με έμφαση στο αυτοκίνητο</div>
-                    <h2 className="text-3xl font-bold leading-tight">Δυνατό πρώτο impression για πελάτες που ψάχνουν σοβαρό κατάστημα.</h2>
-                    <p className="mt-4 max-w-lg text-zinc-300">Η αρχική σελίδα μπορεί να δείχνει προσφορές, νέα παραλαβή, χρηματοδότηση, trade-in και άμεση επικοινωνία.</p>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-        </div>
-      </section>
-
-      <section id="inventory" className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
-        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="text-sm uppercase tracking-[0.25em] text-zinc-500">Inventory</div>
-            <h2 className="mt-2 text-3xl font-bold">Αγγελίες οχημάτων</h2>
-            <p className="mt-2 text-zinc-400">Ξεκινάμε από λευκή σελίδα. Οι αγγελίες που περνάς στο panel πιο κάτω εμφανίζονται αυτόματα εδώ.</p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 lg:w-full lg:max-w-[860px]">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Αναζήτηση π.χ. Mercedes, Peugeot..." className="rounded-2xl border-zinc-800 bg-zinc-950/80 pl-10 text-white placeholder:text-zinc-500" />
+          <section id="why" className="ah-section">
+            <div style={{ maxWidth: 760, marginBottom: 24 }}>
+              <div className="ah-section-kicker">Γιατί δικό σου site</div>
+              <h2 className="ah-section-title">Να χτίζεις δικό σου brand, όχι μόνο ξένη πλατφόρμα</h2>
+              <p className="ah-section-text">Το site λειτουργεί σαν η βιτρίνα της επιχείρησής σου: πιο premium εικόνα, καλύτερη εμπιστοσύνη και περισσότερα απευθείας τηλέφωνα.</p>
             </div>
-            <Select value={fuel} onValueChange={setFuel}>
-              <SelectTrigger className="rounded-2xl border-zinc-800 bg-zinc-950/80 text-white"><SelectValue placeholder="Καύσιμο" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Όλα</SelectItem>
-                <SelectItem value="βενζίνη">Βενζίνη</SelectItem>
-                <SelectItem value="diesel">Diesel</SelectItem>
-                <SelectItem value="hybrid">Hybrid</SelectItem>
-                <SelectItem value="plug-in">Plug-in Hybrid</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={transmission} onValueChange={setTransmission}>
-              <SelectTrigger className="rounded-2xl border-zinc-800 bg-zinc-950/80 text-white"><SelectValue placeholder="Κιβώτιο" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Όλα τα κιβώτια</SelectItem>
-                <SelectItem value="αυτόματο">Αυτόματο</SelectItem>
-                <SelectItem value="χειροκίνητο">Χειροκίνητο</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={yearFrom} onValueChange={setYearFrom}>
-              <SelectTrigger className="rounded-2xl border-zinc-800 bg-zinc-950/80 text-white"><SelectValue placeholder="Από έτος" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Από οποιοδήποτε έτος</SelectItem>
-                <SelectItem value="2024">Από 2024</SelectItem>
-                <SelectItem value="2023">Από 2023</SelectItem>
-                <SelectItem value="2022">Από 2022</SelectItem>
-                <SelectItem value="2021">Από 2021</SelectItem>
-                <SelectItem value="2020">Από 2020</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+            <div className="ah-benefit-grid">
+              {benefits.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.title} className="ah-card ah-benefit-card">
+                    <div className="ah-benefit-icon"><Icon size={24} /></div>
+                    <h3 style={{ margin: '0 0 10px', fontSize: 22 }}>{item.title}</h3>
+                    <p className="ah-section-text" style={{ margin: 0 }}>{item.text}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
 
-        {carsError && <div className="mb-6 rounded-[2rem] border border-amber-700/40 bg-amber-950/30 p-5 text-amber-100">{carsError}</div>}
-        {isLoadingCars && <div className="mb-6 rounded-[2rem] border border-zinc-700 bg-zinc-950/80 p-5 text-zinc-300">Γίνεται φόρτωση αγγελιών από τη βάση δεδομένων...</div>}
+          <section className="ah-section">
+            <div className="ah-card ah-split-card">
+              <div>
+                <div className="ah-section-kicker">Dealer CMS Demo</div>
+                <h2 className="ah-section-title">Πρόσθεσε αγγελίες από εδώ</h2>
+                <div className="ah-list">
+                  <div>• Οι αγγελίες αποθηκεύονται online στη Supabase</div>
+                  <div>• Μόλις πατήσεις προσθήκη, γράφονται στη βάση και εμφανίζονται στο απόθεμα</div>
+                  <div>• Μπορείς να βάλεις τίτλο, τιμή, έτος, χιλιόμετρα, καύσιμο και φωτογραφία</div>
+                  <div>• Αυτή είναι η βάση για κανονικό admin panel και σύνδεση με το domain</div>
+                </div>
 
-        {!isLoadingCars && cars.length === 0 && (
-          <div className="mb-6 rounded-[2rem] border border-dashed border-zinc-700 bg-zinc-950/80 p-5 text-zinc-300">
-            Δεν υπάρχει ακόμη ενεργό απόθεμα. Πρόσθεσε την πρώτη αγγελία από το panel διαχείρισης πιο κάτω.
-            <div className="mt-2 text-sm text-zinc-500">Η αναζήτηση στην αρχική σελίδα είναι ήδη συνδεδεμένη με τα φίλτρα του αποθέματος.</div>
-          </div>
-        )}
-
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((car) => <VehicleCard key={car.id} car={car} />)}
-        </div>
-      </section>
-
-      <section id="why" className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
-        <div className="mb-8 max-w-2xl">
-          <div className="text-sm uppercase tracking-[0.25em] text-zinc-500">Γιατί δικό σου site</div>
-          <h2 className="mt-2 text-3xl font-bold">Να χτίζεις δικό σου brand, όχι μόνο ξένη πλατφόρμα</h2>
-          <p className="mt-3 text-zinc-400">Το site λειτουργεί σαν η βιτρίνα της επιχείρησής σου: πιο premium εικόνα, καλύτερη εμπιστοσύνη, περισσότερα απευθείας τηλέφωνα και δυνατότητα να βγάζεις lead χωρίς να εξαρτάσαι αποκλειστικά από marketplace.</p>
-        </div>
-        <div className="grid gap-6 md:grid-cols-3">
-          {benefits.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Card key={item.title} className="rounded-[2rem] border border-zinc-800/80 bg-zinc-950/80">
-                <CardContent className="p-6">
-                  <div className="mb-4 inline-flex rounded-2xl border border-zinc-800 bg-black p-3"><Icon className="h-6 w-6 text-zinc-200" /></div>
-                  <h3 className="text-xl font-semibold">{item.title}</h3>
-                  <p className="mt-3 leading-7 text-zinc-400">{item.text}</p>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-6 pb-16 lg:px-8">
-        <Card className="overflow-hidden rounded-[2rem] border border-zinc-800/80 bg-gradient-to-br from-zinc-950 via-black to-zinc-950">
-          <CardContent className="grid gap-8 p-8 lg:grid-cols-[0.9fr_1.1fr] lg:p-10">
-            <div>
-              <div className="text-sm uppercase tracking-[0.25em] text-zinc-400">Dealer CMS Demo</div>
-              <h2 className="mt-2 text-3xl font-bold">Πρόσθεσε αγγελίες από εδώ</h2>
-              <div className="mt-5 space-y-3 text-zinc-300">
-                <div>• Οι αγγελίες αποθηκεύονται πλέον online στη Supabase</div>
-                <div>• Μόλις πατήσεις προσθήκη, γράφονται στη βάση και εμφανίζονται στο απόθεμα</div>
-                <div>• Μπορείς να βάλεις τίτλο, τιμή, έτος, χιλιόμετρα, καύσιμο και φωτογραφία</div>
-                <div>• Αυτό είναι η βάση για κανονικό admin panel και σύνδεση με το domain</div>
-              </div>
-
-              <div className="mt-8 rounded-[2rem] border border-zinc-800 bg-black/60 p-5">
-                <div className="mb-4 flex items-center gap-2 text-lg font-semibold"><Database className="h-5 w-5" /> Ενεργές αγγελίες</div>
-                <div className="space-y-3">
-                  {cars.map((car) => (
-                    <div key={car.id} className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-800 bg-zinc-950/80 px-4 py-3">
-                      <div className="min-w-0">
-                        <div className="truncate font-medium text-zinc-100">{car.title}</div>
-                        <div className="mt-1 text-sm text-zinc-500">{car.price} • {car.year} • {car.km}</div>
+                <div className="ah-admin-list">
+                  <div className="ah-inline" style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}><Database size={20} /> Ενεργές αγγελίες</div>
+                  <div className="ah-stack">
+                    {cars.map((car) => (
+                      <div key={car.id} className="ah-admin-item">
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{car.title}</div>
+                          <div className="ah-muted" style={{ marginTop: 4, fontSize: 14 }}>{car.price} • {car.year} • {car.km}</div>
+                        </div>
+                        <button className="ah-btn ah-btn-secondary" onClick={() => handleDeleteCar(car.id)}>
+                          <Trash2 size={16} /> Διαγραφή
+                        </button>
                       </div>
-                      <Button variant="outline" onClick={() => handleDeleteCar(car.id)} className="shrink-0 rounded-xl border-zinc-700 bg-transparent text-zinc-100 hover:bg-zinc-900">
-                        <Trash2 className="mr-2 h-4 w-4" /> Διαγραφή
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-[2rem] border border-zinc-800 bg-black/60 p-6">
-              <div className="mb-4 flex items-center gap-2 text-lg font-semibold"><CarFront className="h-5 w-5" /> Νέα αγγελία</div>
-              <div className="grid gap-3 text-sm text-zinc-300">
-                <Input value={form.title} onChange={(e) => handleFormChange('title', e.target.value)} placeholder="Τίτλος αγγελίας" className="rounded-2xl border-zinc-800 bg-zinc-950/80 text-white placeholder:text-zinc-500" />
-                <div className="grid grid-cols-2 gap-3">
-                  <Input value={form.price} onChange={(e) => handleFormChange('price', e.target.value)} placeholder="Τιμή π.χ. €18.900" className="rounded-2xl border-zinc-800 bg-zinc-950/80 text-white placeholder:text-zinc-500" />
-                  <Input value={form.year} onChange={(e) => handleFormChange('year', e.target.value)} placeholder="Έτος π.χ. 2021" className="rounded-2xl border-zinc-800 bg-zinc-950/80 text-white placeholder:text-zinc-500" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <Input value={form.km} onChange={(e) => handleFormChange('km', e.target.value)} placeholder="Χιλιόμετρα π.χ. 98.000 km" className="rounded-2xl border-zinc-800 bg-zinc-950/80 text-white placeholder:text-zinc-500" />
-                  <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-3">
-                    <label className="mb-2 block text-sm text-zinc-400">Φωτογραφία αυτοκινήτου</label>
-                    <input type="file" accept="image/*" onChange={(e) => handleFormChange('imageFile', e.target.files?.[0] || null)} className="block w-full text-sm text-zinc-300 file:mr-4 file:rounded-xl file:border-0 file:bg-zinc-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-black hover:file:bg-zinc-200" />
+                    ))}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <Select value={form.fuel} onValueChange={(value) => handleFormChange('fuel', value)}>
-                    <SelectTrigger className="rounded-2xl border-zinc-800 bg-zinc-950/80 text-white"><SelectValue placeholder="Καύσιμο" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Βενζίνη">Βενζίνη</SelectItem>
-                      <SelectItem value="Diesel">Diesel</SelectItem>
-                      <SelectItem value="Hybrid">Hybrid</SelectItem>
-                      <SelectItem value="Plug-in Hybrid">Plug-in Hybrid</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={form.transmission} onValueChange={(value) => handleFormChange('transmission', value)}>
-                    <SelectTrigger className="rounded-2xl border-zinc-800 bg-zinc-950/80 text-white"><SelectValue placeholder="Κιβώτιο" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Αυτόματο">Αυτόματο</SelectItem>
-                      <SelectItem value="Χειροκίνητο">Χειροκίνητο</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-zinc-200">
-                  <input type="checkbox" checked={form.featured} onChange={(e) => handleFormChange('featured', e.target.checked)} className="h-4 w-4" />
-                  Προτεινόμενη αγγελία
-                </label>
-                <div className="flex gap-3 pt-2">
-                  <Button onClick={handleAddCar} className="flex-1 rounded-2xl bg-zinc-100 text-black hover:bg-zinc-200"><Plus className="mr-2 h-4 w-4" /> Προσθήκη αγγελίας</Button>
-                  <Button onClick={resetForm} variant="outline" className="flex-1 rounded-2xl border-zinc-700 bg-transparent text-zinc-100 hover:bg-zinc-900">Καθαρισμός</Button>
+              </div>
+
+              <div className="ah-card ah-form-card">
+                <div className="ah-inline" style={{ fontSize: 20, fontWeight: 700, marginBottom: 14 }}><CarFront size={20} /> Νέα αγγελία</div>
+                <div className="ah-form-grid">
+                  <input className="ah-input" value={form.title} onChange={(e) => handleFormChange('title', e.target.value)} placeholder="Τίτλος αγγελίας" />
+                  <div className="ah-form-two">
+                    <input className="ah-input" value={form.price} onChange={(e) => handleFormChange('price', e.target.value)} placeholder="Τιμή π.χ. €18.900" />
+                    <input className="ah-input" value={form.year} onChange={(e) => handleFormChange('year', e.target.value)} placeholder="Έτος π.χ. 2021" />
+                  </div>
+                  <div className="ah-form-two">
+                    <input className="ah-input" value={form.km} onChange={(e) => handleFormChange('km', e.target.value)} placeholder="Χιλιόμετρα π.χ. 98.000 km" />
+                    <div className="ah-file-wrap">
+                      <label>Φωτογραφία αυτοκινήτου</label>
+                      <input type="file" accept="image/*" onChange={(e) => handleFormChange('imageFile', e.target.files?.[0] || null)} />
+                    </div>
+                  </div>
+                  <div className="ah-form-two">
+                    <select className="ah-select" value={form.fuel} onChange={(e) => handleFormChange('fuel', e.target.value)}>
+                      <option value="Βενζίνη">Βενζίνη</option>
+                      <option value="Diesel">Diesel</option>
+                      <option value="Hybrid">Hybrid</option>
+                      <option value="Plug-in Hybrid">Plug-in Hybrid</option>
+                    </select>
+                    <select className="ah-select" value={form.transmission} onChange={(e) => handleFormChange('transmission', e.target.value)}>
+                      <option value="Αυτόματο">Αυτόματο</option>
+                      <option value="Χειροκίνητο">Χειροκίνητο</option>
+                    </select>
+                  </div>
+                  <label className="ah-checkbox">
+                    <input type="checkbox" checked={form.featured} onChange={(e) => handleFormChange('featured', e.target.checked)} />
+                    Προτεινόμενη αγγελία
+                  </label>
+                  <div className="ah-row ah-gap-sm">
+                    <button className="ah-btn ah-btn-primary ah-btn-block" onClick={handleAddCar}><Plus size={16} /> Προσθήκη αγγελίας</button>
+                    <button className="ah-btn ah-btn-secondary ah-btn-block" onClick={resetForm}>Καθαρισμός</button>
+                  </div>
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </section>
+          </section>
 
-      <section className="mx-auto max-w-7xl px-6 pb-16 lg:px-8">
-        <Card className="overflow-hidden rounded-[2rem] border border-zinc-800/80 bg-gradient-to-br from-zinc-950 via-black to-zinc-950">
-          <CardContent className="grid gap-8 p-6 lg:grid-cols-[0.9fr_1.1fr] lg:p-8">
-            <div className="flex flex-col justify-center">
-              <div className="text-sm uppercase tracking-[0.25em] text-zinc-500">Τοποθεσία</div>
-              <h2 className="mt-2 text-3xl font-bold">Βρες μας εύκολα</h2>
-              <p className="mt-4 text-zinc-300">Η έκθεσή μας βρίσκεται σε κεντρικό σημείο στα Γιαννιτσά, με εύκολη πρόσβαση για επίσκεψη και επικοινωνία.</p>
-              <div className="mt-6 space-y-5 text-zinc-300">
-                <div className="flex items-start gap-3"><MapPin className="mt-1 h-5 w-5 text-zinc-200" /> <span>Εγνατίας 3, Γιαννιτσά, 58100</span></div>
-
-                <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
-                  <div className="mb-2 text-xs uppercase tracking-[0.22em] text-zinc-500">Σταθερά τηλέφωνα</div>
-                  <div className="flex items-center gap-3 text-zinc-100"><Phone className="h-5 w-5 text-zinc-200" /> <span>23820-27679 • 23820-81550</span></div>
+          <section className="ah-section">
+            <div className="ah-card ah-location-grid">
+              <div>
+                <div className="ah-section-kicker">Τοποθεσία</div>
+                <h2 className="ah-section-title">Βρες μας εύκολα</h2>
+                <p className="ah-section-text">Η έκθεσή μας βρίσκεται σε κεντρικό σημείο στα Γιαννιτσά, με εύκολη πρόσβαση για επίσκεψη και επικοινωνία.</p>
+                <div className="ah-stack" style={{ marginTop: 20 }}>
+                  <div className="ah-inline"><MapPin size={18} /> Εγνατίας 3, Γιαννιτσά, 58100</div>
+                  <div className="ah-contact-box">
+                    <div className="ah-contact-kicker">Σταθερά τηλέφωνα</div>
+                    <div className="ah-inline"><Phone size={18} /> 23820-27679 • 23820-81550</div>
+                  </div>
+                  <div className="ah-contact-box">
+                    <div className="ah-contact-kicker">Κινητά τηλέφωνα</div>
+                    <div className="ah-inline"><Phone size={18} /> 6977-412-558</div>
+                  </div>
+                  <div className="ah-inline"><Mail size={18} /> xgeorgatsis@gmail.com</div>
+                  <div>
+                    <a className="ah-btn ah-btn-primary" href="https://www.google.com/maps/search/?api=1&query=%CE%95%CE%B3%CE%BD%CE%B1%CF%84%CE%AF%CE%B1%CF%82+3%2C+%CE%93%CE%B9%CE%B1%CE%BD%CE%BD%CE%B9%CF%84%CF%83%CE%AC+58100" target="_blank" rel="noreferrer">Οδηγίες στο χάρτη</a>
+                  </div>
                 </div>
-
-                <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
-                  <div className="mb-2 text-xs uppercase tracking-[0.22em] text-zinc-500">Κινητά τηλέφωνα</div>
-                  <div className="flex items-center gap-3 text-zinc-100"><Phone className="h-5 w-5 text-zinc-200" /> <span>6977-412-558</span></div>
-                </div>
-
-                <div className="flex items-center gap-3"><Mail className="h-5 w-5 text-zinc-200" /> <span>xgeorgatsis@gmail.com</span></div>
               </div>
-              <div className="mt-6">
-                <Button asChild size="lg" className="rounded-2xl bg-zinc-100 text-black hover:bg-zinc-200">
-                  <a href="https://www.google.com/maps/search/?api=1&query=%CE%95%CE%B3%CE%BD%CE%B1%CF%84%CE%AF%CE%B1%CF%82+3%2C+%CE%93%CE%B9%CE%B1%CE%BD%CE%BD%CE%B9%CF%84%CF%83%CE%AC+58100" target="_blank" rel="noreferrer">Οδηγίες στο χάρτη</a>
-                </Button>
-              </div>
-            </div>
-            <div className="overflow-hidden rounded-[1.5rem] border border-zinc-800 bg-black/60">
-              <div className="relative flex h-[360px] items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.07),transparent_20%),linear-gradient(135deg,#0a0a0a_0%,#111111_50%,#0a0a0a_100%)]">
-                <div className="absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:32px_32px]" />
-                <div className="absolute left-[18%] top-[28%] h-24 w-24 rounded-full bg-zinc-200/5 blur-3xl" />
-                <div className="absolute right-[20%] bottom-[18%] h-28 w-28 rounded-full bg-zinc-200/5 blur-3xl" />
-                <div className="relative z-10 flex flex-col items-center text-center">
-                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-zinc-700 bg-zinc-100 text-black shadow-2xl"><MapPin className="h-8 w-8" /></div>
-                  <div className="text-xs uppercase tracking-[0.3em] text-zinc-500">Σημείο επιχείρησης</div>
-                  <div className="mt-3 text-2xl font-bold text-zinc-100">Εγνατίας 3</div>
-                  <div className="mt-2 text-zinc-300">Γιαννιτσά, Τ.Κ. 58100</div>
-                  <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950/90 px-4 py-3 text-sm text-zinc-400">Interactive χάρτης ανοίγει με το κουμπί “Οδηγίες στο χάρτη” χωρίς να διακόπτεται η προεπισκόπηση.</div>
+              <div className="ah-map-panel">
+                <div>
+                  <div style={{ width: 64, height: 64, margin: '0 auto 16px', display: 'grid', placeItems: 'center', borderRadius: 999, background: '#f4f4f5', color: '#111827' }}><MapPin size={30} /></div>
+                  <div className="ah-section-kicker">Σημείο επιχείρησης</div>
+                  <div style={{ fontSize: 34, fontWeight: 800, marginTop: 10 }}>Εγνατίας 3</div>
+                  <div className="ah-muted" style={{ marginTop: 8 }}>Γιαννιτσά, Τ.Κ. 58100</div>
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </section>
+          </section>
+        </main>
 
-      <footer id="contact" className="border-t border-zinc-800/80 bg-black/80">
-        <div className="mx-auto grid max-w-7xl gap-8 px-6 py-10 md:grid-cols-3 lg:px-8">
-          <div>
-            <div className="text-xl font-bold">Auto-Hellas ΓΕΩΡΓΑΤΣΗΣ</div>
-            <p className="mt-3 max-w-sm text-zinc-400">Σχεδιασμός για αντιπροσωπεία μεταχειρισμένων με premium εικόνα και εύκολη διαχείριση αγγελιών.</p>
+        <footer id="contact" className="ah-footer">
+          <div className="ah-shell ah-footer-grid">
+            <div>
+              <div style={{ fontSize: 24, fontWeight: 800 }}>Auto-Hellas ΓΕΩΡΓΑΤΣΗΣ</div>
+              <p className="ah-section-text" style={{ maxWidth: 360 }}>Σχεδιασμός για αντιπροσωπεία μεταχειρισμένων με premium εικόνα και εύκολη διαχείριση αγγελιών.</p>
+            </div>
+            <div className="ah-stack">
+              <div className="ah-contact-box">
+                <div className="ah-contact-kicker">Σταθερά</div>
+                <div className="ah-stack">
+                  <div className="ah-inline"><Phone size={16} /> 23820-27679</div>
+                  <div className="ah-inline"><Phone size={16} /> 23820-81550</div>
+                </div>
+              </div>
+              <div className="ah-contact-box">
+                <div className="ah-contact-kicker">Κινητά</div>
+                <div className="ah-stack">
+                  <div className="ah-inline"><Phone size={16} /> 6977-937-444</div>
+                  <div className="ah-inline"><Phone size={16} /> 6977-412-558</div>
+                </div>
+              </div>
+              <div className="ah-inline"><Mail size={16} /> xgeorgatsis@gmail.com</div>
+              <div className="ah-inline"><MapPin size={16} /> Γιαννιτσά</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <button className="ah-btn ah-btn-primary">Ζητήστε επικοινωνία</button>
+            </div>
           </div>
-          <div className="space-y-4 text-zinc-300">
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
-              <div className="mb-2 text-[11px] uppercase tracking-[0.22em] text-zinc-500">Σταθερά</div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-3"><Phone className="h-4 w-4" /> 23820-27679</div>
-                <div className="flex items-center gap-3"><Phone className="h-4 w-4" /> 23820-81550</div>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
-              <div className="mb-2 text-[11px] uppercase tracking-[0.22em] text-zinc-500">Κινητά</div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-3"><Phone className="h-4 w-4" /> 6977-937-444</div>
-                <div className="flex items-center gap-3"><Phone className="h-4 w-4" /> 6977-412-558</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3"><Mail className="h-4 w-4" /> xgeorgatsis@gmail.com</div>
-            <div className="flex items-center gap-3"><MapPin className="h-4 w-4" /> Γιαννιτσά</div>
-          </div>
-          <div className="flex items-center md:justify-end">
-            <Button size="lg" className="rounded-2xl bg-zinc-100 text-black hover:bg-zinc-200">Ζητήστε επικοινωνία</Button>
-          </div>
-        </div>
-      </footer>
-    </div>
+        </footer>
+      </div>
+    </>
   );
 }

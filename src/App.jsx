@@ -138,16 +138,17 @@ export default function AutoHellasPremiumDemo() {
   const [cars, setCars] = useState([]);
   const [isLoadingCars, setIsLoadingCars] = useState(true);
   const [carsError, setCarsError] = useState('');
-  const [form, setForm] = useState({
-    title: '',
-    price: '',
-    year: '',
-    km: '',
-    fuel: 'Βενζίνη',
-    transmission: 'Αυτόματο',
-    image: '',
-    featured: true,
-  });
+const [form, setForm] = useState({
+  title: '',
+  price: '',
+  year: '',
+  km: '',
+  fuel: 'Βενζίνη',
+  transmission: 'Αυτόματο',
+  image: '',
+  imageFile: null,
+  featured: true,
+});
 
   useEffect(() => {
     let isMounted = true;
@@ -203,25 +204,80 @@ export default function AutoHellasPremiumDemo() {
   };
 
   const resetForm = () => {
-    setForm({
-      title: '',
-      price: '',
-      year: '',
-      km: '',
-      fuel: 'Βενζίνη',
-      transmission: 'Αυτόματο',
-      image: '',
-      featured: true,
-    });
-  };
+  setForm({
+    title: '',
+    price: '',
+    year: '',
+    km: '',
+    fuel: 'Βενζίνη',
+    transmission: 'Αυτόματο',
+    image: '',
+    imageFile: null,
+    featured: true,
+  });
+};
 
-  const handleAddCar = async () => {
-    if (!form.title || !form.price || !form.year) return;
+ const handleAddCar = async () => {
+  if (!form.title || !form.price || !form.year) return;
 
-    if (!supabase) {
-      setCarsError('Δεν υπάρχει σύνδεση με Supabase ακόμη.');
+  if (!supabase) {
+    setCarsError('Δεν υπάρχει σύνδεση με Supabase ακόμη.');
+    return;
+  }
+
+  setCarsError('');
+
+  let imageUrl =
+    'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80';
+
+  if (form.imageFile) {
+    const fileExt = form.imageFile.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+    const filePath = `cars/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('car-images')
+      .upload(filePath, form.imageFile, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: form.imageFile.type,
+      });
+
+    if (uploadError) {
+      console.error('Supabase upload failed', uploadError);
+      setCarsError('Η φωτογραφία δεν ανέβηκε.');
       return;
     }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('car-images')
+      .getPublicUrl(filePath);
+
+    imageUrl = publicUrlData.publicUrl;
+  }
+
+  const payload = {
+    title: form.title,
+    price: form.price,
+    year: Number(form.year),
+    km: form.km || '—',
+    fuel: form.fuel,
+    transmission: form.transmission,
+    image: imageUrl,
+    featured: form.featured,
+  };
+
+  const { data, error } = await supabase.from('cars').insert(payload).select().single();
+
+  if (error) {
+    console.error('Supabase insert failed', error);
+    setCarsError('Η αγγελία δεν αποθηκεύτηκε. Έλεγξε table / permissions / keys.');
+    return;
+  }
+
+  setCars((prev) => [data, ...prev]);
+  resetForm();
+};
 
     setCarsError('');
 
@@ -622,12 +678,15 @@ export default function AutoHellasPremiumDemo() {
                     placeholder="Χιλιόμετρα π.χ. 98.000 km"
                     className="rounded-2xl border-zinc-800 bg-zinc-950/80 text-white placeholder:text-zinc-500"
                   />
-                  <Input
-                    value={form.image}
-                    onChange={(e) => handleFormChange('image', e.target.value)}
-                    placeholder="Link φωτογραφίας"
-                    className="rounded-2xl border-zinc-800 bg-zinc-950/80 text-white placeholder:text-zinc-500"
-                  />
+                  <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-3">
+  <label className="mb-2 block text-sm text-zinc-400">Φωτογραφία αυτοκινήτου</label>
+  <input
+    type="file"
+    accept="image/*"
+    onChange={(e) => handleFormChange('imageFile', e.target.files?.[0] || null)}
+    className="block w-full text-sm text-zinc-300 file:mr-4 file:rounded-xl file:border-0 file:bg-zinc-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-black hover:file:bg-zinc-200"
+  />
+</div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <Select value={form.fuel} onValueChange={(value) => handleFormChange('fuel', value)}>
